@@ -74,7 +74,7 @@ function Ensure-DefaultImageVariables {
     'POSTGRES_IMAGE' = 'docker.m.daocloud.io/library/postgres:16-alpine'
     'REDIS_IMAGE'    = 'docker.m.daocloud.io/library/redis:7-alpine'
     'MINIO_IMAGE'    = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z'
-    'KAFKA_IMAGE'    = 'docker.m.daocloud.io/bitnami/kafka:3.8'
+    'KAFKA_IMAGE'    = 'docker.m.daocloud.io/apache/kafka:3.8.0'
     'MLFLOW_IMAGE'   = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1'
   }
 
@@ -90,6 +90,12 @@ function Ensure-DefaultImageVariables {
 
   if ($updated) {
     Write-Host 'Patched deploy/docker-compose/.env.local with missing default image variables.'
+  }
+
+  $currentKafka = Get-EnvValueFromFile -EnvFile $EnvFile -Name 'KAFKA_IMAGE' -DefaultValue ''
+  if ($currentKafka -eq 'docker.m.daocloud.io/bitnami/kafka:3.8') {
+    Set-EnvValueInFile -EnvFile $EnvFile -Name 'KAFKA_IMAGE' -Value 'docker.m.daocloud.io/apache/kafka:3.8.0'
+    Write-Host 'Updated KAFKA_IMAGE from legacy bitnami mirror to apache mirror default.'
   }
 }
 
@@ -146,9 +152,9 @@ function Get-FallbackImages {
     'KAFKA_IMAGE' {
       return @(
         $CurrentImage,
-        'dockerproxy.com/bitnami/kafka:3.8',
-        'bitnami/kafka:3.8',
-        'quay.io/bitnami/kafka:3.8.0-debian-12-r0'
+        'docker.m.daocloud.io/apache/kafka:3.7.1',
+        'dockerproxy.com/apache/kafka:3.8.0',
+        'apache/kafka:3.8.0'
       ) | Select-Object -Unique
     }
     default {
@@ -178,7 +184,7 @@ function Resolve-ImageWithFallback {
     }
     catch {
       $lastError = $_
-      Write-Host "Image candidate failed for $Name: $candidate"
+      Write-Host "Image candidate failed for ${Name}: $candidate"
     }
   }
 
@@ -242,7 +248,7 @@ if (-not $Status -and -not $Stop) {
     @{ Name = 'POSTGRES_IMAGE'; Default = 'docker.m.daocloud.io/library/postgres:16-alpine' },
     @{ Name = 'REDIS_IMAGE'; Default = 'docker.m.daocloud.io/library/redis:7-alpine' },
     @{ Name = 'MINIO_IMAGE'; Default = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z' },
-    @{ Name = 'KAFKA_IMAGE'; Default = 'docker.m.daocloud.io/bitnami/kafka:3.8' },
+    @{ Name = 'KAFKA_IMAGE'; Default = 'docker.m.daocloud.io/apache/kafka:3.8.0' },
     @{ Name = 'MLFLOW_IMAGE'; Default = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1' }
   )
 

@@ -65,3 +65,4 @@ REDIS_IMAGE=registry.example.com/library/redis:7-alpine
 
 Kafka mirror note:
 - `setup-local-env.ps1` now tries fallback images automatically when `KAFKA_IMAGE` is unreachable and writes a working fallback back to `deploy/docker-compose/.env.local`.
+- The default Kafka image was switched to `docker.m.daocloud.io/apache/kafka:3.8.0` for better accessibility in domestic networks.
