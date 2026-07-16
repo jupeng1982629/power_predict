@@ -25,3 +25,20 @@ If `deploy/docker-compose/.env.local` does not exist, scripts auto-create it fro
 Note: PostgreSQL, Redis, MinIO, Kafka, and MLflow are started as containers. They do not need separate native installation when Docker is available.
 
 Optional helpers remain available for lower-level control if you need them.
+
+## Registry/Mirror Overrides
+
+If image pulls fail because Docker Hub or GHCR is not reachable, update `deploy/docker-compose/.env.local` and set these variables to a reachable mirror or private registry:
+
+- POSTGRES_IMAGE
+- REDIS_IMAGE
+- MINIO_IMAGE
+- KAFKA_IMAGE
+- MLFLOW_IMAGE
+
+Example:
+
+```text
+POSTGRES_IMAGE=registry.example.com/library/postgres:16-alpine
+REDIS_IMAGE=registry.example.com/library/redis:7-alpine
+```

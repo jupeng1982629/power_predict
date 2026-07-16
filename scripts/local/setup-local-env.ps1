@@ -11,6 +11,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $script:DockerCommand = $null
+$script:ComposeProjectDir = $null
 
 function Test-CommandExists {
   param([Parameter(Mandatory = $true)][string]$Name)
@@ -66,6 +67,25 @@ function Ensure-EnvFile {
   return $envFile
 }
 
+function Test-RegistryConnectivity {
+  param(
+    [Parameter(Mandatory = $true)][string]$Image
+  )
+
+  Write-Host "Testing registry connectivity for $Image ..."
+  & $script:DockerCommand pull --quiet $Image | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw @"
+Unable to pull $Image.
+This usually means Docker Desktop proxy settings or your network cannot reach the image registry.
+Fix options:
+  1. Configure Docker Desktop proxy/mirror settings.
+  2. Use a reachable registry mirror by setting POSTGRES_IMAGE, REDIS_IMAGE, MINIO_IMAGE, KAFKA_IMAGE, or MLFLOW_IMAGE in deploy/docker-compose/.env.local.
+  3. Verify your network/VPN can access the image registry.
+"@
+  }
+}
+
 function Invoke-Compose {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -96,9 +116,40 @@ function Invoke-Compose {
   }
 }
 
+function Get-EnvValueFromFile {
+  param(
+    [Parameter(Mandatory = $true)][string]$EnvFile,
+    [Parameter(Mandatory = $true)][string]$Name,
+    [string]$DefaultValue = ''
+  )
+
+  $line = Get-Content $EnvFile | Where-Object { $_ -match "^$Name=" } | Select-Object -First 1
+  if ($line) {
+    return ($line -split '=', 2)[1]
+  }
+
+  return $DefaultValue
+}
+
 $repoRoot = Resolve-Path "$PSScriptRoot/../.."
 Assert-DockerReady
-Ensure-EnvFile -RepoRoot $repoRoot | Out-Null
+$envFile = Ensure-EnvFile -RepoRoot $repoRoot
+
+$script:ComposeProjectDir = $repoRoot
+
+if (-not $Status -and -not $Stop) {
+  $imagesToCheck = @(
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'POSTGRES_IMAGE' -DefaultValue 'postgres:16-alpine'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'REDIS_IMAGE' -DefaultValue 'redis:7-alpine'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MINIO_IMAGE' -DefaultValue 'minio/minio:RELEASE.2025-02-03T21-03-04Z'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'KAFKA_IMAGE' -DefaultValue 'bitnami/kafka:3.8'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MLFLOW_IMAGE' -DefaultValue 'ghcr.io/mlflow/mlflow:v2.15.1')
+  )
+
+  foreach ($image in $imagesToCheck) {
+    Test-RegistryConnectivity -Image $image
+  }
+}
 
 if ($Stop) {
   Invoke-Compose -RepoRoot $repoRoot -Profile $Profile -ExtraArgs @('down', '--remove-orphans')
