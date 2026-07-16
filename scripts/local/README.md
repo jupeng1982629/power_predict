@@ -4,6 +4,7 @@ PowerShell scripts for Stage 2 local environment.
 
 ## Scripts
 
+- add-docker-path.ps1: add Docker Desktop bin directory to current session and user PATH
 - setup-local-env.cmd: Windows launcher that bypasses PowerShell execution policy
 - use-docker.ps1: add Docker Desktop bin directory to the current PowerShell session PATH
 - setup-local-env.ps1: one-shot bootstrap for local infrastructure
@@ -17,8 +18,8 @@ PowerShell scripts for Stage 2 local environment.
 
 From repository root:
 
-1. `./scripts/local/setup-local-env.cmd`
-2. `. ./scripts/local/use-docker.ps1`
+1. `./scripts/local/add-docker-path.ps1`
+2. `./scripts/local/setup-local-env.cmd`
 3. `./scripts/local/setup-local-env.ps1`
 4. `./scripts/local/setup-local-env.ps1 -Profile local-full`
 5. `./scripts/local/setup-local-env.ps1 -Status`
@@ -31,6 +32,8 @@ Note: PostgreSQL, Redis, MinIO, Kafka, and MLflow are started as containers. The
 Optional helpers remain available for lower-level control if you need them.
 
 If `docker` is still not recognized in the current terminal, run the helper above with dot-sourcing so it updates the current PowerShell session.
+
+If the current terminal is an old session, close it and open a new PowerShell terminal in VS Code after running the helper or restarting VS Code.
 
 ## Registry/Mirror Overrides
 
