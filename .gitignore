@@ -1,0 +1,42 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.venv/
+**/venv/
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/.pnpm-store/
+
+# Build / Temp
+tmp/
+temp/
+*.tmp
+
+# Docker
+**/.docker/
