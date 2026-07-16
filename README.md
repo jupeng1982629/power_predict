@@ -23,7 +23,9 @@ power_predict/
 
 - Stage 1 (repository scaffold and engineering constraints): completed baseline.
 - See docs/06-stage1-scaffold-baseline.md for details.
+- Stage 2 (local infrastructure baseline): compose files and local scripts completed.
+- See docs/07-stage2-local-infra-baseline.md for details.
 
 ## Next
 
-- Stage 2: local infrastructure baseline with Docker Compose.
+- Stage 3: database DDL and Hudi table script baseline.

@@ -1,0 +1,110 @@
+name: power-predict-app
+
+services:
+  gateway-service:
+    image: ${GATEWAY_IMAGE:-ghcr.io/power-predict/gateway-service:local}
+    profiles: ["app"]
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  plant-service:
+    image: ${PLANT_IMAGE:-ghcr.io/power-predict/plant-service:local}
+    profiles: ["app"]
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  monitor-service:
+    image: ${MONITOR_IMAGE:-ghcr.io/power-predict/monitor-service:local}
+    profiles: ["app"]
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  forecast-service:
+    image: ${FORECAST_IMAGE:-ghcr.io/power-predict/forecast-service:local}
+    profiles: ["app"]
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  system-service:
+    image: ${SYSTEM_IMAGE:-ghcr.io/power-predict/system-service:local}
+    profiles: ["app"]
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  feature-service:
+    image: ${FEATURE_IMAGE:-ghcr.io/power-predict/feature-service:local}
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  model-service:
+    image: ${MODEL_IMAGE:-ghcr.io/power-predict/model-service:local}
+    profiles: ["app"]
+    depends_on:
+      mlflow:
+        condition: service_started
+    networks:
+      - pp-net
+
+  inference-service:
+    image: ${INFERENCE_IMAGE:-ghcr.io/power-predict/inference-service:local}
+    profiles: ["app"]
+    depends_on:
+      model-service:
+        condition: service_started
+    networks:
+      - pp-net
+
+  web-portal:
+    image: ${WEB_IMAGE:-ghcr.io/power-predict/web-portal:local}
+    profiles: ["app"]
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    depends_on:
+      gateway-service:
+        condition: service_started
+    networks:
+      - pp-net
+
+networks:
+  pp-net:
+    external: true
+    name: power-predict-infra_pp-net
