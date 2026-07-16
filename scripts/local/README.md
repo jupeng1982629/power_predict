@@ -4,6 +4,7 @@ PowerShell scripts for Stage 2 local environment.
 
 ## Scripts
 
+- use-docker.ps1: add Docker Desktop bin directory to the current PowerShell session PATH
 - setup-local-env.ps1: one-shot bootstrap for local infrastructure
 - check-prereqs.ps1: verify Docker and Docker Compose are available
 - bootstrap-infra.ps1: check prerequisites and start local infrastructure in one step
@@ -15,6 +16,7 @@ PowerShell scripts for Stage 2 local environment.
 
 From repository root:
 
+0. `. ./scripts/local/use-docker.ps1`
 1. `./scripts/local/setup-local-env.ps1`
 2. `./scripts/local/setup-local-env.ps1 -Profile local-full`
 3. `./scripts/local/setup-local-env.ps1 -Status`
@@ -25,6 +27,8 @@ If `deploy/docker-compose/.env.local` does not exist, scripts auto-create it fro
 Note: PostgreSQL, Redis, MinIO, Kafka, and MLflow are started as containers. They do not need separate native installation when Docker is available.
 
 Optional helpers remain available for lower-level control if you need them.
+
+If `docker` is still not recognized in the current terminal, run the helper above with dot-sourcing so it updates the current PowerShell session.
 
 ## Registry/Mirror Overrides
 
