@@ -67,6 +67,32 @@ function Ensure-EnvFile {
   return $envFile
 }
 
+function Ensure-DefaultImageVariables {
+  param([Parameter(Mandatory = $true)][string]$EnvFile)
+
+  $defaults = @{
+    'POSTGRES_IMAGE' = 'docker.m.daocloud.io/library/postgres:16-alpine'
+    'REDIS_IMAGE'    = 'docker.m.daocloud.io/library/redis:7-alpine'
+    'MINIO_IMAGE'    = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z'
+    'KAFKA_IMAGE'    = 'docker.m.daocloud.io/bitnami/kafka:3.8'
+    'MLFLOW_IMAGE'   = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1'
+  }
+
+  $content = Get-Content $EnvFile
+  $updated = $false
+
+  foreach ($name in $defaults.Keys) {
+    if (-not ($content | Where-Object { $_ -match "^$name=" } | Select-Object -First 1)) {
+      Add-Content -Path $EnvFile -Value "$name=$($defaults[$name])"
+      $updated = $true
+    }
+  }
+
+  if ($updated) {
+    Write-Host 'Patched deploy/docker-compose/.env.local with missing default image variables.'
+  }
+}
+
 function Test-RegistryConnectivity {
   param(
     [Parameter(Mandatory = $true)][string]$Image
@@ -134,16 +160,17 @@ function Get-EnvValueFromFile {
 $repoRoot = Resolve-Path "$PSScriptRoot/../.."
 Assert-DockerReady
 $envFile = Ensure-EnvFile -RepoRoot $repoRoot
+Ensure-DefaultImageVariables -EnvFile $envFile
 
 $script:ComposeProjectDir = $repoRoot
 
 if (-not $Status -and -not $Stop) {
   $imagesToCheck = @(
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'POSTGRES_IMAGE' -DefaultValue 'postgres:16-alpine'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'REDIS_IMAGE' -DefaultValue 'redis:7-alpine'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MINIO_IMAGE' -DefaultValue 'minio/minio:RELEASE.2025-02-03T21-03-04Z'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'KAFKA_IMAGE' -DefaultValue 'bitnami/kafka:3.8'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MLFLOW_IMAGE' -DefaultValue 'ghcr.io/mlflow/mlflow:v2.15.1')
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'POSTGRES_IMAGE' -DefaultValue 'docker.m.daocloud.io/library/postgres:16-alpine'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'REDIS_IMAGE' -DefaultValue 'docker.m.daocloud.io/library/redis:7-alpine'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MINIO_IMAGE' -DefaultValue 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'KAFKA_IMAGE' -DefaultValue 'docker.m.daocloud.io/bitnami/kafka:3.8'),
+    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MLFLOW_IMAGE' -DefaultValue 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1')
   )
 
   foreach ($image in $imagesToCheck) {
