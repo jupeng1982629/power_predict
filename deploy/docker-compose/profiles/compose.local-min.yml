@@ -1,11 +1,16 @@
 services:
   postgres:
-    profiles: ["local-min"]
+    profiles:
+      - local-min
   redis:
-    profiles: ["local-min"]
+    profiles:
+      - local-min
   minio:
-    profiles: ["local-min"]
+    profiles:
+      - local-min
   kafka:
-    profiles: ["local-min"]
+    profiles:
+      - local-min
   mlflow:
-    profiles: ["local-min"]
+    profiles:
+      - local-min
