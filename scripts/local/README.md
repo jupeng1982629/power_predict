@@ -4,6 +4,7 @@ PowerShell scripts for Stage 2 local environment.
 
 ## Scripts
 
+- setup-local-env.cmd: Windows launcher that bypasses PowerShell execution policy
 - use-docker.ps1: add Docker Desktop bin directory to the current PowerShell session PATH
 - setup-local-env.ps1: one-shot bootstrap for local infrastructure
 - check-prereqs.ps1: verify Docker and Docker Compose are available
@@ -16,11 +17,12 @@ PowerShell scripts for Stage 2 local environment.
 
 From repository root:
 
-0. `. ./scripts/local/use-docker.ps1`
-1. `./scripts/local/setup-local-env.ps1`
-2. `./scripts/local/setup-local-env.ps1 -Profile local-full`
-3. `./scripts/local/setup-local-env.ps1 -Status`
-4. `./scripts/local/setup-local-env.ps1 -Stop`
+1. `./scripts/local/setup-local-env.cmd`
+2. `. ./scripts/local/use-docker.ps1`
+3. `./scripts/local/setup-local-env.ps1`
+4. `./scripts/local/setup-local-env.ps1 -Profile local-full`
+5. `./scripts/local/setup-local-env.ps1 -Status`
+6. `./scripts/local/setup-local-env.ps1 -Stop`
 
 If `deploy/docker-compose/.env.local` does not exist, scripts auto-create it from `deploy/docker-compose/.env.local.example`.
 
