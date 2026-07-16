@@ -112,6 +112,79 @@ Fix options:
   }
 }
 
+function Set-EnvValueInFile {
+  param(
+    [Parameter(Mandatory = $true)][string]$EnvFile,
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$Value
+  )
+
+  $lines = Get-Content $EnvFile
+  $updated = $false
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -match "^$Name=") {
+      $lines[$i] = "$Name=$Value"
+      $updated = $true
+      break
+    }
+  }
+
+  if (-not $updated) {
+    $lines += "$Name=$Value"
+  }
+
+  Set-Content -Path $EnvFile -Value $lines -Encoding UTF8
+}
+
+function Get-FallbackImages {
+  param(
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$CurrentImage
+  )
+
+  switch ($Name) {
+    'KAFKA_IMAGE' {
+      return @(
+        $CurrentImage,
+        'dockerproxy.com/bitnami/kafka:3.8',
+        'bitnami/kafka:3.8',
+        'quay.io/bitnami/kafka:3.8.0-debian-12-r0'
+      ) | Select-Object -Unique
+    }
+    default {
+      return @($CurrentImage)
+    }
+  }
+}
+
+function Resolve-ImageWithFallback {
+  param(
+    [Parameter(Mandatory = $true)][string]$EnvFile,
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$CurrentImage
+  )
+
+  $candidates = Get-FallbackImages -Name $Name -CurrentImage $CurrentImage
+  $lastError = $null
+
+  foreach ($candidate in $candidates) {
+    try {
+      Test-RegistryConnectivity -Image $candidate
+      if ($candidate -ne $CurrentImage) {
+        Set-EnvValueInFile -EnvFile $EnvFile -Name $Name -Value $candidate
+        Write-Host "Updated $Name to fallback image: $candidate"
+      }
+      return $candidate
+    }
+    catch {
+      $lastError = $_
+      Write-Host "Image candidate failed for $Name: $candidate"
+    }
+  }
+
+  throw $lastError
+}
+
 function Invoke-Compose {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -165,16 +238,17 @@ Ensure-DefaultImageVariables -EnvFile $envFile
 $script:ComposeProjectDir = $repoRoot
 
 if (-not $Status -and -not $Stop) {
-  $imagesToCheck = @(
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'POSTGRES_IMAGE' -DefaultValue 'docker.m.daocloud.io/library/postgres:16-alpine'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'REDIS_IMAGE' -DefaultValue 'docker.m.daocloud.io/library/redis:7-alpine'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MINIO_IMAGE' -DefaultValue 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'KAFKA_IMAGE' -DefaultValue 'docker.m.daocloud.io/bitnami/kafka:3.8'),
-    (Get-EnvValueFromFile -EnvFile $envFile -Name 'MLFLOW_IMAGE' -DefaultValue 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1')
+  $imageVars = @(
+    @{ Name = 'POSTGRES_IMAGE'; Default = 'docker.m.daocloud.io/library/postgres:16-alpine' },
+    @{ Name = 'REDIS_IMAGE'; Default = 'docker.m.daocloud.io/library/redis:7-alpine' },
+    @{ Name = 'MINIO_IMAGE'; Default = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z' },
+    @{ Name = 'KAFKA_IMAGE'; Default = 'docker.m.daocloud.io/bitnami/kafka:3.8' },
+    @{ Name = 'MLFLOW_IMAGE'; Default = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1' }
   )
 
-  foreach ($image in $imagesToCheck) {
-    Test-RegistryConnectivity -Image $image
+  foreach ($item in $imageVars) {
+    $current = Get-EnvValueFromFile -EnvFile $envFile -Name $item.Name -DefaultValue $item.Default
+    Resolve-ImageWithFallback -EnvFile $envFile -Name $item.Name -CurrentImage $current | Out-Null
   }
 }
 
