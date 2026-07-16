@@ -1,0 +1,6 @@
+﻿spring:
+  application:
+    name: system-service
+
+server:
+  port: 0

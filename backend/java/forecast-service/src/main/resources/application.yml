@@ -1,0 +1,6 @@
+﻿spring:
+  application:
+    name: forecast-service
+
+server:
+  port: 0

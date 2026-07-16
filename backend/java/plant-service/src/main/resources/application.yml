@@ -1,0 +1,6 @@
+﻿spring:
+  application:
+    name: plant-service
+
+server:
+  port: 0
