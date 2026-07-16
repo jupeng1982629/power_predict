@@ -10,18 +10,42 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$script:DockerCommand = $null
+
 function Test-CommandExists {
   param([Parameter(Mandatory = $true)][string]$Name)
   return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Resolve-DockerCommand {
+  if (Test-CommandExists -Name 'docker') {
+    return 'docker'
+  }
+
+  $fallback = 'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
+  if (Test-Path $fallback) {
+    return $fallback
+  }
+
+  return $null
+}
+
 function Assert-DockerReady {
-  if (-not (Test-CommandExists -Name 'docker')) {
+  $script:DockerCommand = Resolve-DockerCommand
+  if (-not $script:DockerCommand) {
     throw 'Docker was not found in PATH. Install Docker Desktop first.'
   }
 
+  # If docker is resolved by absolute path, ensure helper binaries in the same folder are discoverable.
+  if ($script:DockerCommand -ne 'docker') {
+    $dockerBinDir = Split-Path -Parent $script:DockerCommand
+    if ($env:Path -notlike "*$dockerBinDir*") {
+      $env:Path = "$dockerBinDir;$env:Path"
+    }
+  }
+
   try {
-    docker compose version | Out-Null
+    & $script:DockerCommand compose version | Out-Null
   }
   catch {
     throw 'Docker Compose is not available. Install Docker Desktop with Compose v2 and make sure Docker is running.'
@@ -52,7 +76,8 @@ function Invoke-Compose {
   $composeArgs = @(
     '--env-file', 'deploy/docker-compose/.env.local',
     '-f', 'deploy/docker-compose/base/compose.infrastructure.yml',
-    '-f', "deploy/docker-compose/profiles/compose.$Profile.yml"
+    '-f', "deploy/docker-compose/profiles/compose.$Profile.yml",
+    '--profile', $Profile
   )
 
   if ($Profile -eq 'local-full') {
@@ -61,7 +86,10 @@ function Invoke-Compose {
 
   Push-Location $RepoRoot
   try {
-    docker compose @composeArgs @ExtraArgs
+    & $script:DockerCommand compose @composeArgs @ExtraArgs
+    if ($LASTEXITCODE -ne 0) {
+      throw "docker compose failed with exit code $LASTEXITCODE"
+    }
   }
   finally {
     Pop-Location
