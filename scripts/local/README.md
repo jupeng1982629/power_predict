@@ -29,11 +29,22 @@ If `deploy/docker-compose/.env.local` does not exist, scripts auto-create it fro
 
 Note: PostgreSQL, Redis, MinIO, Kafka, and MLflow are started as containers. They do not need separate native installation when Docker is available.
 
+For `local-full`, the application images default to local tags such as `gateway-service:local` and are expected to be built locally in a later stage.
+
 Optional helpers remain available for lower-level control if you need them.
 
 If `docker` is still not recognized in the current terminal, run the helper above with dot-sourcing so it updates the current PowerShell session.
 
 If the current terminal is an old session, close it and open a new PowerShell terminal in VS Code after running the helper or restarting VS Code.
+
+If you want to fix the current terminal immediately without reopening it, run this in the same PowerShell window:
+
+```powershell
+$env:Path = 'C:\Program Files\Docker\Docker\resources\bin;' + $env:Path
+docker version
+```
+
+This is the reliable way to update the active session PATH.
 
 ## Registry/Mirror Overrides
 
