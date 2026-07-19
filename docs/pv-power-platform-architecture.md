@@ -574,6 +574,14 @@ flowchart TD
 7. Spring Boot 提供统一查询 API。
 8. Vue 展示实时功率和预测曲线。
 
+## 20. 阶段 4 实施清单
+
+1. 本地种子数据：准备 `mdm.plant_info`、`iam.user_account` 等最小可用数据。
+2. 认证底座：引入 Keycloak 作为 OIDC/OAuth2 授权服务器。
+3. 网关接入：Spring Cloud Gateway 验证 JWT，并注入租户上下文。
+4. 服务接入：各业务服务切换为 Resource Server 模式。
+5. 验证闭环：Navicat、网关、后端接口和本地页面都能跑通最小演示链路。
+
 这条闭环已经具备完整平台形态，只是把高级功能压缩到最小实现。
 
 ## 20. 推荐项目结构

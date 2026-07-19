@@ -1,5 +1,15 @@
 ﻿# web-portal
 
-Vue 3 frontend scaffold placeholder.
+Minimal Vue 3 portal for the local demo chain.
 
-Planned folders are prepared under src/ for API, views, components, stores, router, utils, and styles.
+Current scope:
+
+- load demo summary data from gateway-service
+- verify frontend -> gateway -> system-service request flow
+
+Run locally:
+
+1. start system-service on port 8081
+2. start gateway-service on port 8080
+3. run `npm install`
+4. run `npm run dev`

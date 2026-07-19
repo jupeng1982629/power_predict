@@ -3,4 +3,12 @@
     name: gateway-service
 
 server:
-  port: 0
+  port: 8080
+
+powerpredict:
+  system-service:
+    base-url: http://localhost:8081
+  inference-service:
+    base-url: http://localhost:8003
+  auth:
+    local-token: local-demo-token

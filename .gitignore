@@ -20,6 +20,7 @@ logs/
 # Java / Maven
 **/target/
 **/.mvn/wrapper/maven-wrapper.jar
+.jdk/
 
 # Python
 **/__pycache__/

@@ -6,17 +6,17 @@
 
 ```text
 power_predict/
-	docs/
-	backend/
-		java/
-		python/
-	frontend/
-		web-portal/
-	data/
-	sql/
-	deploy/
-	scripts/
-	.github/workflows/
+  docs/
+  backend/
+    java/
+    python/
+  frontend/
+    web-portal/
+  data/
+  sql/
+  deploy/
+  scripts/
+  .github/workflows/
 ```
 
 ## Current Progress
@@ -25,7 +25,10 @@ power_predict/
 - See docs/06-stage1-scaffold-baseline.md for details.
 - Stage 2 (local infrastructure baseline): compose files and local scripts completed.
 - See docs/07-stage2-local-infra-baseline.md for details.
+- Stage 3 (PostgreSQL schema and Hudi tables): baseline scripts created.
+- See docs/08-stage3-database-and-hudi-baseline.md for details.
+- Stage 4 (authentication base and seed data): now starting with local seed data and auth implementation checklist.
 
 ## Next
 
-- Stage 3: database DDL and Hudi table script baseline.
+- Stage 4: authentication base, seed data, and local verification flow.
