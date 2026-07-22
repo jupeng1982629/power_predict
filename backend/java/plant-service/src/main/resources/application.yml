@@ -1,6 +1,11 @@
 ﻿spring:
   application:
     name: plant-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:power_predict}
+    username: ${POSTGRES_USER:power_predict}
+    password: ${POSTGRES_PASSWORD:power_predict}
+    driver-class-name: org.postgresql.Driver
 
 server:
-  port: 0
+  port: 8082

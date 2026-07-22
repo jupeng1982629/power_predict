@@ -14,6 +14,46 @@
   <artifactId>monitor-service</artifactId>
   <packaging>jar</packaging>
 
+  <properties>
+    <spring-boot.version>3.5.16</spring-boot.version>
+  </properties>
+
   <name>monitor-service</name>
   <description>Stage-1 scaffold module for monitor-service</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.powerpredict</groupId>
+      <artifactId>common-libs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

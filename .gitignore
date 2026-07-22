@@ -39,6 +39,7 @@ logs/
 tmp/
 temp/
 *.tmp
+.run/
 
 # Docker
 **/.docker/

@@ -76,6 +76,7 @@ function Ensure-DefaultImageVariables {
     'MINIO_IMAGE'    = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z'
     'KAFKA_IMAGE'    = 'docker.m.daocloud.io/apache/kafka:3.8.0'
     'MLFLOW_IMAGE'   = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1'
+    'KEYCLOAK_IMAGE' = 'quay.io/keycloak/keycloak:26.0.7'
   }
 
   $content = Get-Content $EnvFile
@@ -249,7 +250,8 @@ if (-not $Status -and -not $Stop) {
     @{ Name = 'REDIS_IMAGE'; Default = 'docker.m.daocloud.io/library/redis:7-alpine' },
     @{ Name = 'MINIO_IMAGE'; Default = 'docker.m.daocloud.io/minio/minio:RELEASE.2025-02-03T21-03-04Z' },
     @{ Name = 'KAFKA_IMAGE'; Default = 'docker.m.daocloud.io/apache/kafka:3.8.0' },
-    @{ Name = 'MLFLOW_IMAGE'; Default = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1' }
+    @{ Name = 'MLFLOW_IMAGE'; Default = 'ghcr.m.daocloud.io/mlflow/mlflow:v2.15.1' },
+    @{ Name = 'KEYCLOAK_IMAGE'; Default = 'quay.io/keycloak/keycloak:26.0.7' }
   )
 
   foreach ($item in $imageVars) {
@@ -271,6 +273,14 @@ if ($Status) {
 Invoke-Compose -RepoRoot $repoRoot -Profile $Profile -ExtraArgs @('up', '-d')
 Invoke-Compose -RepoRoot $repoRoot -Profile $Profile -ExtraArgs @('ps')
 
+$syncScript = Join-Path $repoRoot 'scripts/local/sync-keycloak-web-portal.ps1'
+if (Test-Path $syncScript) {
+  & powershell -NoProfile -ExecutionPolicy Bypass -File $syncScript
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Keycloak client sync failed. Fix Keycloak admin connectivity before continuing.'
+  }
+}
+
 Write-Host ''
 Write-Host 'Local infrastructure is ready.'
 Write-Host 'Common endpoints:'
@@ -279,4 +289,5 @@ Write-Host '  Redis:      localhost:6379'
 Write-Host '  MinIO API:  localhost:9000'
 Write-Host '  MinIO UI:   localhost:9001'
 Write-Host '  Kafka:      localhost:9092'
-Write-Host '  MLflow:     localhost:5000'
+Write-Host ("  MLflow:     localhost:{0}" -f (Get-EnvValueFromFile -EnvFile $envFile -Name 'MLFLOW_PORT' -DefaultValue '15000'))
+Write-Host ("  Keycloak:   http://localhost:{0}" -f (Get-EnvValueFromFile -EnvFile $envFile -Name 'KEYCLOAK_PORT' -DefaultValue '18081'))

@@ -1,6 +1,16 @@
 ﻿spring:
   application:
     name: system-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:${KEYCLOAK_PORT:18081}/realms/power-predict}
 
 server:
   port: 8081
+
+powerpredict:
+  auth:
+    local-debug-enabled: ${LOCAL_DEBUG_AUTH_ENABLED:true}
+    local-token: local-demo-token

@@ -36,5 +36,36 @@
 ## 4. 当前状态
 
 - PostgreSQL schema 已完成。
-- PostgreSQL seed data 已开始实施。
-- Keycloak 认证底座待落地。
+- PostgreSQL seed data 已落地并支持脚本化重复导入。
+- Keycloak 认证底座已落地（本地 compose 启动 + realm 导入 + demo 用户）。
+- gateway-service 与 system-service 已切换到 JWT Resource Server，并保留可开关的本地调试回退模式。
+
+## 5. 本地验证步骤
+
+1. 启动基础设施：`./scripts/local/setup-local-env.cmd`。
+2. 访问 Keycloak 管理台：`http://localhost:18081`。
+3. 使用管理员账号登录：
+	 - user: `admin`
+	 - password: `admin123!`
+4. Realm 选择 `power-predict`，确认存在用户 `demo.admin`。
+5. 前端本地调试页面当前运行在 `http://localhost:5260`，该地址已加入 Keycloak client 的 redirectUris / webOrigins。
+6. `setup-local-env.ps1` 启动基础设施后会自动执行 `scripts/local/sync-keycloak-web-portal.ps1`，确保已存在 realm 的 client 配置与当前本地端口保持一致。
+7. 获取 Access Token（示例命令）：
+
+```bash
+curl -X POST "http://localhost:18081/realms/power-predict/protocol/openid-connect/token" \
+	-H "Content-Type: application/x-www-form-urlencoded" \
+	-d "grant_type=password" \
+	-d "client_id=web-portal" \
+	-d "username=demo.admin" \
+	-d "password=Demo@123456"
+```
+
+8. 使用 token 访问网关会话接口：
+
+```bash
+curl "http://localhost:8080/api/v1/auth/session" \
+	-H "Authorization: Bearer <access_token>"
+```
+
+9. 如果需要沿用旧的本地调试 token，可设置环境变量 `LOCAL_DEBUG_AUTH_ENABLED=true`。

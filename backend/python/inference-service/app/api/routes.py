@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from fastapi import APIRouter, Body, Header, Query
 
 from app.schemas.common import ApiResponse, HealthDTO
-from app.schemas.requests import ForecastDayAheadRequest
+from app.schemas.requests import ForecastDayAheadRequest, InternalInferenceDayAheadRequest
 from app.schemas.responses import (
     ActualPointsDTO,
     DashboardOverviewDTO,
@@ -69,4 +69,15 @@ def run_day_ahead_job(
     plant_id = payload.plantId or "plant-demo-001"
     forecast_date = payload.forecastDate or date.today()
     requested_by = x_user_id or "user-demo-admin"
+    return ok(write_prediction_job(plant_id, forecast_date, requested_by))
+
+
+@router.post("/internal/v1/inference/dayahead")
+def run_day_ahead_internal(
+    payload: InternalInferenceDayAheadRequest = Body(default_factory=InternalInferenceDayAheadRequest),
+    x_request_user: str | None = Header(default=None, alias="X-User-Id"),
+) -> ApiResponse[ForecastJobResultDTO]:
+    plant_id = payload.plantId or "plant-demo-001"
+    forecast_date = payload.forecastDate or date.today()
+    requested_by = x_request_user or "forecast-service"
     return ok(write_prediction_job(plant_id, forecast_date, requested_by))

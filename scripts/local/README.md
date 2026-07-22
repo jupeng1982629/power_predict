@@ -12,9 +12,11 @@ PowerShell scripts for Stage 2 local environment.
 - setup-local-env.cmd: Windows launcher that bypasses PowerShell execution policy
 - use-docker.ps1: add Docker Desktop bin directory to the current PowerShell session PATH
 - setup-local-env.ps1: one-shot bootstrap for local infrastructure
+- get-keycloak-token.ps1: request a demo Access Token from local Keycloak for Stage 4 JWT verification
+- sync-keycloak-web-portal.ps1: sync Keycloak web-portal redirect URIs and web origins with the current local frontend port
 - check-prereqs.ps1: verify Docker and Docker Compose are available
 - bootstrap-infra.ps1: check prerequisites and start local infrastructure in one step
-- up-local-min.ps1: start infrastructure only (postgres, redis, minio, kafka, mlflow)
+- up-local-min.ps1: start infrastructure only (postgres, redis, minio, kafka, mlflow, keycloak)
 - up-local-full.ps1: start infrastructure + application placeholders + compute placeholders
 - down-local.ps1: stop and remove containers from the composed stack
 - dev-stack.cmd: one-click launcher for full local dev stack lifecycle (start/stop/status)
@@ -34,6 +36,8 @@ From repository root:
 8. `./scripts/local/dev-stack.cmd`
 9. `./scripts/local/dev-stack.cmd -Action status`
 10. `./scripts/local/dev-stack.cmd -Action stop`
+11. `./scripts/local/get-keycloak-token.ps1`
+12. `./scripts/local/sync-keycloak-web-portal.ps1`
 
 ## Unified Dev Stack (Recommended)
 
@@ -47,6 +51,7 @@ What `dev-stack` does on start:
 
 - checks required commands and runtime dependencies (Docker, Maven, npm, Python packages)
 - optionally brings up local infra via `setup-local-env.ps1`
+- syncs local Keycloak client redirect URIs/web origins for the current frontend port
 - initializes PostgreSQL schema and seed data
 - optionally builds Java modules (`common-libs`, `system-service`, `gateway-service`)
 - starts and manages local processes:
@@ -54,7 +59,7 @@ What `dev-stack` does on start:
   - gateway-service (8080)
   - model-service (8002)
   - inference-service (8003)
-  - web-portal (5173)
+  - web-portal (5260)
 
 Logs and managed process state are written under `.run/dev-stack/`.
 
@@ -70,11 +75,16 @@ If you need to refresh the current PowerShell session PATH for Docker, run `./sc
 
 If `deploy/docker-compose/.env.local` does not exist, scripts auto-create it from `deploy/docker-compose/.env.local.example`.
 
-Note: PostgreSQL, Redis, MinIO, Kafka, and MLflow are started as containers. They do not need separate native installation when Docker is available.
+Note: PostgreSQL, Redis, MinIO, Kafka, MLflow, and Keycloak are started as containers. They do not need separate native installation when Docker is available.
 
 For `local-full`, the application images default to local tags such as `gateway-service:local` and are expected to be built locally in a later stage.
 
 Optional helpers remain available for lower-level control if you need them.
+
+Stage 4 auth note:
+
+- `setup-local-env.ps1` now calls `sync-keycloak-web-portal.ps1` after compose startup so Keycloak keeps the current local web callback origins in sync.
+- `dev-stack.ps1 -Action status` uses a real Keycloak token for gateway checks when Keycloak is available.
 
 If `docker` is still not recognized in the current terminal, run the helper above with dot-sourcing so it updates the current PowerShell session.
 

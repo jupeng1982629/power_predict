@@ -1,6 +1,6 @@
 package com.powerpredict.gatewayservice.api;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.powerpredict.gatewayservice.config.PowerPredictGatewayProperties;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,9 +16,9 @@ public class AuthGatewayController {
   private final GatewayProxySupport proxySupport;
 
   public AuthGatewayController(
-      @Value("${powerpredict.system-service.base-url:http://localhost:8081}") String systemServiceBaseUrl,
+      PowerPredictGatewayProperties properties,
       GatewayProxySupport proxySupport) {
-    this.systemServiceBaseUrl = systemServiceBaseUrl;
+    this.systemServiceBaseUrl = properties.getSystemService().getBaseUrl();
     this.proxySupport = proxySupport;
   }
 

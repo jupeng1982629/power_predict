@@ -3,4 +3,4 @@
     name: monitor-service
 
 server:
-  port: 0
+  port: 8084

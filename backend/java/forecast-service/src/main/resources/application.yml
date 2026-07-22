@@ -3,4 +3,12 @@
     name: forecast-service
 
 server:
-  port: 0
+  port: 8085
+
+powerpredict:
+  feature-service:
+    base-url: http://localhost:8001
+  model-service:
+    base-url: http://localhost:8002
+  inference-service:
+    base-url: http://localhost:8003

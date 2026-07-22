@@ -1,0 +1,52 @@
+### Stage5 smoke test via gateway
+### Use VS Code REST Client extension or translate to curl
+
+@host = http://localhost:8080
+@token = local-demo-token
+@plantId = plant-demo-001
+@forecastDate = 2026-07-22
+
+### 1) auth session
+GET {{host}}/api/v1/auth/session
+Authorization: Bearer {{token}}
+
+### 2) plant list
+GET {{host}}/api/v1/plants?pageNo=1&pageSize=5
+Authorization: Bearer {{token}}
+
+### 3) system users
+GET {{host}}/api/v1/system/users?pageNo=1&pageSize=5
+Authorization: Bearer {{token}}
+
+### 4) monitor generation list
+GET {{host}}/api/v1/monitor/plants/{{plantId}}/generation-records?pageNo=1&pageSize=5
+Authorization: Bearer {{token}}
+
+### 5) forecast train job submit
+POST {{host}}/api/v1/forecast/model-train-jobs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "plantId": "{{plantId}}",
+  "startDate": "2026-06-01",
+  "endDate": "2026-07-20",
+  "featureSetVersion": "feature-v2-xgb",
+  "algorithm": "xgboost"
+}
+
+### 6) forecast day-ahead submit
+POST {{host}}/api/v1/forecast/jobs/dayahead
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "plantId": "{{plantId}}",
+  "forecastDate": "{{forecastDate}}",
+  "modelVersion": "",
+  "weatherSource": "api"
+}
+
+### 7) forecast list
+GET {{host}}/api/v1/forecast/plants/{{plantId}}/dayahead?forecastDate={{forecastDate}}
+Authorization: Bearer {{token}}

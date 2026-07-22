@@ -27,3 +27,16 @@ class ModelLatestDTO(BaseModel):
     artifact_uri: str
     stage: str
     train_end_time: str | None = None
+
+
+class InternalTrainAcceptedDTO(BaseModel):
+    trainingJobId: str
+    modelVersion: str
+    status: str
+
+
+class InternalTrainStatusDTO(BaseModel):
+    trainingJobId: str
+    status: str
+    modelVersion: str | None = None
+    metrics: dict[str, float] | None = None

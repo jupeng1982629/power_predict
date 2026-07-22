@@ -122,6 +122,14 @@
 - Query: `at`（可选，默认当前）
 - Scope: `monitor:read`
 
+返回字段要求（采集侧）：
+
+1. 功率字段：`activePowerKw`, `reactivePowerKvar`, `apparentPowerKva`（可选）。
+2. 功率因数字段：`powerFactorTotal`，可选 `powerFactorPhaseA/B/C`。
+3. 三相电压电流：`voltagePhaseA/B/C`, `currentPhaseA/B/C`。
+4. 发电量字段：`energy15mKwh`, `energyDailyKwh`。
+5. 扩展电气参数：`frequencyHz`, `inverterTempC`, `deviceStatusCode`（可选）。
+
 返回示例：
 
 ```json
@@ -133,6 +141,16 @@
     "plantId": "P1001",
     "timestamp": "2026-07-16T10:15:00+08:00",
     "activePowerKw": 52340.2,
+    "reactivePowerKvar": 1120.5,
+    "powerFactorTotal": 0.98,
+    "voltagePhaseA": 380.2,
+    "voltagePhaseB": 379.8,
+    "voltagePhaseC": 381.1,
+    "currentPhaseA": 92.4,
+    "currentPhaseB": 91.7,
+    "currentPhaseC": 93.1,
+    "energy15mKwh": 12835.6,
+    "energyDailyKwh": 256780.4,
     "onlineDeviceRatio": 0.98,
     "alarmCount": 2
   }
@@ -140,8 +158,15 @@
 ```
 
 2. `GET /api/v1/monitor/plants/{plantId}/timeseries`
-- Query: `startTime`, `endTime`, `granularity`
+- Query: `startTime`, `endTime`, `granularity`, `metrics[]`
 - Scope: `monitor:read`
+
+其中 `metrics[]` 可选值建议包括：
+
+1. `activePowerKw`, `reactivePowerKvar`, `powerFactorTotal`
+2. `voltagePhaseA`, `voltagePhaseB`, `voltagePhaseC`
+3. `currentPhaseA`, `currentPhaseB`, `currentPhaseC`
+4. `energy15mKwh`, `energyDailyKwh`
 
 ## 4.3 预测管理（forecast-service）
 

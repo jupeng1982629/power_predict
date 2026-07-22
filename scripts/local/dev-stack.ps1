@@ -130,7 +130,7 @@ function Stop-ManagedProcesses {
     }
   }
 
-  Stop-ProcessesByPorts -Ports @(8081, 8080, 8002, 8003, 5173)
+  Stop-ProcessesByPorts -Ports @(8081, 8080, 8002, 8003, 5260)
 }
 
 function Start-ManagedProcess {
@@ -160,6 +160,7 @@ function Start-ManagedProcess {
   $proc = Start-Process -FilePath 'powershell.exe' `
     -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $inlineScript) `
     -WorkingDirectory $WorkDir `
+    -WindowStyle Hidden `
     -RedirectStandardOutput $logOut `
     -RedirectStandardError $logErr `
     -PassThru
@@ -193,6 +194,23 @@ function Test-Http {
       $code = [int]$_.Exception.Response.StatusCode
     }
     return [pscustomobject]@{ service = $Name; status = 'down'; code = $code; url = $Url }
+  }
+}
+
+function Get-KeycloakAccessToken {
+  $body = @{
+    grant_type = 'password'
+    client_id = 'web-portal'
+    username = 'demo.admin'
+    password = 'Demo@123456'
+  }
+
+  try {
+    $response = Invoke-RestMethod -UseBasicParsing -Method Post -Uri 'http://127.0.0.1:18081/realms/power-predict/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body $body -TimeoutSec 6
+    return $response.access_token
+  }
+  catch {
+    return $null
   }
 }
 
@@ -289,13 +307,19 @@ function Save-State {
 }
 
 function Show-Status {
-  $headers = @{ Authorization = 'Bearer local-demo-token' }
+  $token = Get-KeycloakAccessToken
+  $headers = @{}
+  if ($token) {
+    $headers.Authorization = 'Bearer ' + $token
+  }
+
   $checks = @(
     (Test-Http -Name 'system-service' -Url 'http://127.0.0.1:8081/actuator/health'),
     (Test-Http -Name 'gateway-service' -Url 'http://127.0.0.1:8080/actuator/health'),
     (Test-Http -Name 'model-service' -Url 'http://127.0.0.1:8002/health'),
     (Test-Http -Name 'inference-service' -Url 'http://127.0.0.1:8003/health'),
-    (Test-Http -Name 'web-portal' -Url 'http://127.0.0.1:5173'),
+    (Test-Http -Name 'web-portal' -Url 'http://127.0.0.1:5260'),
+    (Test-Http -Name 'gateway-session' -Url 'http://127.0.0.1:8080/api/v1/auth/session' -Headers $headers),
     (Test-Http -Name 'gateway-forecast-read' -Url 'http://127.0.0.1:8080/api/v1/plants/plant-demo-001/forecasts?forecastDate=2026-07-17' -Headers $headers)
   )
 
@@ -320,11 +344,6 @@ if ($Action -eq 'stop') {
   if ($IncludeInfra -and -not $SkipInfra) {
     Invoke-RepoScript -ScriptPath 'scripts/local/setup-local-env.ps1' -Arguments @('-Profile', $InfraProfile, '-Stop')
   }
-  Show-Status
-  return
-}
-
-if ($Action -eq 'status') {
   Show-Status
   return
 }

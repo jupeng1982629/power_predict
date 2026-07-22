@@ -27,8 +27,8 @@ power_predict/
 - See docs/07-stage2-local-infra-baseline.md for details.
 - Stage 3 (PostgreSQL schema and Hudi tables): baseline scripts created.
 - See docs/08-stage3-database-and-hudi-baseline.md for details.
-- Stage 4 (authentication base and seed data): now starting with local seed data and auth implementation checklist.
+- Stage 4 (authentication base and seed data): local Keycloak + JWT resource server + real web login flow are available.
 
 ## Next
 
-- Stage 4: authentication base, seed data, and local verification flow.
+- Stage 5: API contract hardening, OpenAPI outputs, and frontend SDK/alignment.

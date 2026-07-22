@@ -2,10 +2,10 @@ package com.powerpredict.gatewayservice.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powerpredict.gatewayservice.config.PowerPredictGatewayProperties;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -26,10 +26,10 @@ public class ForecastGatewayController {
   private final ObjectMapper objectMapper;
 
   public ForecastGatewayController(
-      @Value("${powerpredict.inference-service.base-url:http://localhost:8003}") String inferenceServiceBaseUrl,
+      PowerPredictGatewayProperties properties,
       GatewayProxySupport proxySupport,
       ObjectMapper objectMapper) {
-    this.inferenceServiceBaseUrl = inferenceServiceBaseUrl;
+    this.inferenceServiceBaseUrl = properties.getInferenceService().getBaseUrl();
     this.proxySupport = proxySupport;
     this.objectMapper = objectMapper;
   }

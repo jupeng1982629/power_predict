@@ -1,0 +1,887 @@
+openapi: 3.0.3
+info:
+  title: Power Predict Monitor Service API
+  version: 0.1.0-draft
+  description: |
+    Draft OpenAPI spec for monitor-service in Stage 5.
+    Scope: generation/weather records CRUD, realtime/timeseries query, Excel import jobs.
+servers:
+  - url: http://localhost:8080
+    description: Local gateway entry
+security:
+  - bearerAuth: []
+tags:
+  - name: Monitor-Realtime
+    description: Realtime and timeseries monitoring data
+  - name: Monitor-Generation
+    description: Generation records management
+  - name: Monitor-Weather
+    description: Weather records management
+  - name: Monitor-Import
+    description: Excel import job APIs
+paths:
+  /api/v1/monitor/plants/{plantId}/realtime:
+    get:
+      tags: [Monitor-Realtime]
+      summary: Get realtime metrics for one plant
+      operationId: getPlantRealtime
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - in: query
+          name: at
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Optional timestamp; default is now.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseRealtimeRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/plants/{plantId}/timeseries:
+    get:
+      tags: [Monitor-Realtime]
+      summary: Query plant timeseries metrics
+      operationId: getPlantTimeseries
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - in: query
+          name: startTime
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endTime
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: granularity
+          required: false
+          schema:
+            type: string
+            enum: [PT15M, PT1H, P1D]
+            default: PT15M
+        - in: query
+          name: metrics
+          required: false
+          description: Repeated query parameter, e.g. metrics=activePowerKw&metrics=energy15mKwh
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - activePowerKw
+                - reactivePowerKvar
+                - apparentPowerKva
+                - powerFactorTotal
+                - powerFactorPhaseA
+                - powerFactorPhaseB
+                - powerFactorPhaseC
+                - voltagePhaseA
+                - voltagePhaseB
+                - voltagePhaseC
+                - currentPhaseA
+                - currentPhaseB
+                - currentPhaseC
+                - frequencyHz
+                - energy15mKwh
+                - energyDailyKwh
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTimeseries'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/plants/{plantId}/generation-records:
+    get:
+      tags: [Monitor-Generation]
+      summary: List generation records
+      operationId: listGenerationRecords
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+        - in: query
+          name: startTime
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endTime
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseGenerationRecordPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Monitor-Generation]
+      summary: Create one generation record
+      operationId: createGenerationRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationRecordCreateRequest'
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseGenerationRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/plants/{plantId}/generation-records/{recordId}:
+    put:
+      tags: [Monitor-Generation]
+      summary: Update one generation record
+      operationId: updateGenerationRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/RecordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationRecordUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseGenerationRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Monitor-Generation]
+      summary: Delete one generation record
+      operationId: deleteGenerationRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/RecordId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/monitor/plants/{plantId}/generation-records:import:
+    post:
+      tags: [Monitor-Import]
+      summary: Import generation records from Excel
+      operationId: importGenerationRecords
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateVersion:
+                  type: string
+                  example: v1.0
+                timezone:
+                  type: string
+                  example: Asia/Shanghai
+                deduplicateStrategy:
+                  type: string
+                  enum: [SKIP, UPSERT]
+                  default: UPSERT
+      responses:
+        '200':
+          description: Import job submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseImportJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/plants/{plantId}/weather-records:
+    get:
+      tags: [Monitor-Weather]
+      summary: List weather records
+      operationId: listWeatherRecords
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+        - in: query
+          name: startTime
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endTime
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseWeatherRecordPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Monitor-Weather]
+      summary: Create one weather record
+      operationId: createWeatherRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeatherRecordCreateRequest'
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseWeatherRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/plants/{plantId}/weather-records/{recordId}:
+    put:
+      tags: [Monitor-Weather]
+      summary: Update one weather record
+      operationId: updateWeatherRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/RecordId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeatherRecordUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseWeatherRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Monitor-Weather]
+      summary: Delete one weather record
+      operationId: deleteWeatherRecord
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+        - $ref: '#/components/parameters/RecordId'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/monitor/plants/{plantId}/weather-records:import:
+    post:
+      tags: [Monitor-Import]
+      summary: Import weather records from Excel
+      operationId: importWeatherRecords
+      parameters:
+        - $ref: '#/components/parameters/PlantId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateVersion:
+                  type: string
+                  example: v1.0
+                timezone:
+                  type: string
+                  example: Asia/Shanghai
+                deduplicateStrategy:
+                  type: string
+                  enum: [SKIP, UPSERT]
+                  default: UPSERT
+      responses:
+        '200':
+          description: Import job submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseImportJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/monitor/import-jobs/{jobId}:
+    get:
+      tags: [Monitor-Import]
+      summary: Query import job status
+      operationId: getImportJob
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseImportJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PlantId:
+      in: path
+      name: plantId
+      required: true
+      schema:
+        type: string
+      description: Plant ID
+    RecordId:
+      in: path
+      name: recordId
+      required: true
+      schema:
+        type: string
+      description: Record ID
+    PageNo:
+      in: query
+      name: pageNo
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      in: query
+      name: pageSize
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+
+  schemas:
+    ApiResponseVoid:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "0"
+        message:
+          type: string
+          example: OK
+        traceId:
+          type: string
+          example: 6f3c2f7a1c9e4b73
+        data:
+          nullable: true
+
+    ApiResponseError:
+      type: object
+      properties:
+        code:
+          type: string
+          example: REQ_400
+        message:
+          type: string
+          example: Validation failed
+        traceId:
+          type: string
+          example: 6f3c2f7a1c9e4b73
+        data:
+          nullable: true
+
+    RealtimeRecord:
+      type: object
+      required: [plantId, recordTime]
+      properties:
+        plantId:
+          type: string
+        recordTime:
+          type: string
+          format: date-time
+        activePowerKw:
+          type: number
+          format: double
+        reactivePowerKvar:
+          type: number
+          format: double
+        apparentPowerKva:
+          type: number
+          format: double
+        powerFactorTotal:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        powerFactorPhaseA:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        powerFactorPhaseB:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        powerFactorPhaseC:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        voltagePhaseA:
+          type: number
+          format: double
+        voltagePhaseB:
+          type: number
+          format: double
+        voltagePhaseC:
+          type: number
+          format: double
+        currentPhaseA:
+          type: number
+          format: double
+        currentPhaseB:
+          type: number
+          format: double
+        currentPhaseC:
+          type: number
+          format: double
+        frequencyHz:
+          type: number
+          format: double
+        energy15mKwh:
+          type: number
+          format: double
+        energyDailyKwh:
+          type: number
+          format: double
+        deviceStatusCode:
+          type: string
+
+    TimeseriesPoint:
+      type: object
+      required: [recordTime]
+      properties:
+        recordTime:
+          type: string
+          format: date-time
+        values:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+
+    TimeseriesData:
+      type: object
+      properties:
+        plantId:
+          type: string
+        granularity:
+          type: string
+        metrics:
+          type: array
+          items:
+            type: string
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeseriesPoint'
+
+    GenerationRecord:
+      allOf:
+        - $ref: '#/components/schemas/RealtimeRecord'
+        - type: object
+          properties:
+            id:
+              type: string
+            source:
+              type: string
+              enum: [MANUAL, SCADA, IMPORT]
+            createdBy:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    GenerationRecordCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/RealtimeRecord'
+
+    GenerationRecordUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/RealtimeRecord'
+
+    WeatherRecord:
+      type: object
+      required: [recordTime]
+      properties:
+        id:
+          type: string
+        plantId:
+          type: string
+        recordTime:
+          type: string
+          format: date-time
+        ghi:
+          type: number
+          format: double
+        dni:
+          type: number
+          format: double
+        dhi:
+          type: number
+          format: double
+        temperatureC:
+          type: number
+          format: double
+        humidityPct:
+          type: number
+          format: double
+        cloudCoverPct:
+          type: number
+          format: double
+        windSpeedMs:
+          type: number
+          format: double
+        windDirectionDeg:
+          type: number
+          format: double
+        source:
+          type: string
+          enum: [MANUAL, API, IMPORT]
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WeatherRecordCreateRequest:
+      type: object
+      required: [recordTime]
+      properties:
+        recordTime:
+          type: string
+          format: date-time
+        ghi:
+          type: number
+          format: double
+        dni:
+          type: number
+          format: double
+        dhi:
+          type: number
+          format: double
+        temperatureC:
+          type: number
+          format: double
+        humidityPct:
+          type: number
+          format: double
+        cloudCoverPct:
+          type: number
+          format: double
+        windSpeedMs:
+          type: number
+          format: double
+        windDirectionDeg:
+          type: number
+          format: double
+
+    WeatherRecordUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/WeatherRecordCreateRequest'
+
+    ImportJob:
+      type: object
+      properties:
+        id:
+          type: string
+        jobType:
+          type: string
+          enum: [GENERATION_IMPORT, WEATHER_IMPORT]
+        plantId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RUNNING, SUCCESS, PARTIAL_SUCCESS, FAILED]
+        sourceFileName:
+          type: string
+        successCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+        errorReportUri:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+
+    PageGenerationRecord:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationRecord'
+        pageNo:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    PageWeatherRecord:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeatherRecord'
+        pageNo:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    ApiResponseRealtimeRecord:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/RealtimeRecord'
+
+    ApiResponseTimeseries:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/TimeseriesData'
+
+    ApiResponseGenerationRecord:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/GenerationRecord'
+
+    ApiResponseGenerationRecordPage:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageGenerationRecord'
+
+    ApiResponseWeatherRecord:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/WeatherRecord'
+
+    ApiResponseWeatherRecordPage:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/PageWeatherRecord'
+
+    ApiResponseImportJob:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/ImportJob'

@@ -106,6 +106,32 @@ services:
     networks:
       - pp-net
 
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0.7}
+    container_name: pp-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${POSTGRES_DB:-power_predict}
+      KC_DB_USERNAME: ${POSTGRES_USER:-power_predict}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-power_predict}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123!}
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "${KEYCLOAK_PORT:-18081}:8080"
+    volumes:
+      - ../../keycloak/power-predict-realm.json:/opt/keycloak/data/import/power-predict-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pp-net
+
 volumes:
   pp_postgres_data:
   pp_redis_data:

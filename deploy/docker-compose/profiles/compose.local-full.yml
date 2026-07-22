@@ -9,6 +9,8 @@ services:
     profiles: ["local-full"]
   mlflow:
     profiles: ["local-full"]
+  keycloak:
+    profiles: ["local-full"]
 
   spark:
     image: bitnami/spark:3.5
